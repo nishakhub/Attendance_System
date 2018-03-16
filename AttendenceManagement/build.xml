@@ -1,0 +1,127 @@
+<?xml version="1.0" ?> 
+<project name="AttendanceManagement" default="war">
+<!--IP46-->
+<!-- mysql - root/root -->
+<!-- /usr/lib/jvm-->
+	<property file="build.properties"/>
+	<property name="src.dir" value="src"/>
+	<property name="web.dir" value="war"/>
+	<property name="javadoc.dir" value="doc"/>
+	<property name="build.dir" value="${web.dir}/WEB-INF/classes"/>
+	<property name="name" value="AttendanceManagement"/>
+	<property environment="env"/>
+	<property name="build_number" value="${env.BUILD_NUMBER}"/>
+	<property name="build_id" value="${env.BUILD_ID}"/>
+	<property name="svn_revision" value="${env.JOB_NAME}-${env.SVN_REVISION}"/>
+
+	<path id="compile.classpath">
+		<fileset dir="WebContent/WEB-INF/lib">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	
+	<path id="unit.test.path">
+	    <path refid="compile.classpath"/>
+    	    <pathelement location="junits/lib/junit-4.7.jar" />
+    	    <pathelement location="build/classes" />
+	    <pathelement location="build/junits" />
+	</path>
+
+	<target name="init">
+		<mkdir dir="build/classes"/>
+		<mkdir dir="dist" />
+		<mkdir dir="build/junits" />
+	</target>
+	
+	<target name="compile" depends="init" >
+		<javac destdir="build/classes" debug="true" srcdir="src">
+			<classpath refid="compile.classpath"/>
+		</javac>
+		<copy todir="build/classes" preservelastmodified="false">
+		    <fileset dir="src">
+		        <include name="*.xml"/>
+		        <include name="*.properties"/>			
+		    </fileset>
+		</copy>
+	</target>
+	
+	<target name="compilejrxmls" >
+			<taskdef name="jrc"
+			       classname="net.sf.jasperreports.ant.JRAntCompileTask">
+			       <classpath refid="compile.classpath" />
+			  </taskdef>
+			  <jrc srcdir="./WebContent/jrxmls" destdir="./WebContent/jaspers" tempdir="./WebContent/jaspers"
+			      	keepjava="false" xmlvalidation="true">
+			      	<classpath refid="compile.classpath"/>
+	    			<include name="**/*.jrxml"/>
+			   </jrc>
+	</target>
+
+	<target name="compileUnitTests" depends="compile">
+	    <javac srcdir="junits/" destdir="build/junits">
+		<classpath refid="unit.test.path"/>
+	    </javac>
+	    <mkdir dir="build/lib"/>
+	    <copy todir="build/lib" preservelastmodified="false">
+		<fileset dir="junits/lib">
+		        <include name="*.*"/>
+		</fileset>
+		<fileset dir="WebContent/WEB-INF/lib">
+		        <include name="*.*"/>
+		</fileset>
+	    </copy>
+	</target>
+	
+	<target name="war" depends="compile">
+		<war destfile="dist/${name}.war" webxml="WebContent/WEB-INF/web.xml">
+			<fileset dir="WebContent"/>
+			<!--lib dir="WebContent/WEB-INF/lib"-->
+			<classes dir="build/classes"/>
+			<manifest>
+				<attribute name="Build-number" value="${build_number}" />
+				<attribute name="Build-version" value="${build_id}" />
+			</manifest>
+		</war>
+		
+	</target>
+	
+	<target name="demoJunitsDeploy" depends="compileUnitTests,war">
+		<jar destfile="build/classes.jar" basedir="build/classes"/>
+		<jar destfile="build/junits.jar" basedir="build/junits"/>
+		
+		<zip destfile="build/demoJunitsDeploy.zip" basedir="build" includes="classes/**,junits/**,lib/**"/>
+		<mkdir dir="${testDeploy.path}/${name}"/>
+		<copy todir="${testDeploy.path}/${name}" preservelastmodified="false">
+		    <fileset dir="build">
+		        <include name="*.zip"/>
+		    </fileset>
+		</copy>
+	</target>
+
+	<target name="clean">
+		<delete dir="dist" />
+		<delete dir="build" />
+	</target>
+
+	<target name="deploywar" depends="war" description="Deploy application as a WAR file">
+       		<copy todir="${deploy.path}" preservelastmodified="true">
+		    <fileset dir="dist">
+		        <include name="*.war"/>
+		    </fileset>
+		</copy>
+    	</target>
+
+	<target name="runUnitTests" depends="compileUnitTests">
+   	    <mkdir dir="build/reports"/>
+	    <junit printsummary="yes" haltonfailure="yes">
+	    <jvmarg value="-Dfile.encoding=UTF-8"/>
+		<classpath refid="unit.test.path"/>
+		<formatter type="xml"/>
+		<batchtest fork="yes" todir="build/reports">
+		    <fileset dir="build/junits">
+		        <include name="**/*"/>
+		    </fileset>
+		</batchtest>
+	    </junit>
+	</target>
+</project>

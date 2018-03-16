@@ -1,0 +1,16 @@
+.modal-footer {   border-top: 0px; }
+
+input[type="checkbox"].selectedId, #selectall {
+    line-height: normal;
+    margin: 0;
+    vertical-align: middle;
+    /* float: none; */
+}
+
+td.vcenter {
+    vertical-align: middle;
+}
+/* .checkbox {
+   margin-top: -5; 
+   float: none;
+} */
